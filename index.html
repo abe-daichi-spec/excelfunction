@@ -109,15 +109,23 @@
             <div class="n" id="streak">0</div>
           </div>
         </div>
-
         <h1 style="margin-top:14px;">今回の出題範囲</h1>
-　       <div class="muted" style="margin-bottom:8px;">（ボタンを押すと表示 / 非表示）</div>
+        <div class="muted" style="margin-bottom:8px;">（ボタンで表示 / 非表示）</div>
 
-          <div class="row" style="margin-top:0;">
+        <div class="row" style="margin-top:0;">
           <button id="btnToggleRange">出題範囲を表示</button>
-          </div>
+        </div>
+        <div class="log" id="listBox" style="display:none; white-space:pre-wrap;"></div>
 
-          <div class="log" id="listBox" style="display:none; white-space:pre-wrap;"></div>
+        <h1 style="margin-top:14px;">間違い一覧</h1>
+        <div class="muted" style="margin-bottom:8px;">（関数ごとの間違い回数。次回も保存されます）</div>
+
+        <div class="row" style="margin-top:0;">
+          <button id="btnToggleMistakes">間違い一覧を表示</button>
+          <button class="bad" id="btnResetMistakes">間違い記録リセット</button>
+        </div>
+        <div class="log" id="mistakeBox" style="display:none; white-space:pre-wrap;"></div>
+
 
         <div class="answerBox" id="teacherBox" style="display:none;">
           <div class="label">正解（先生用表示）</div>
@@ -132,6 +140,8 @@
   // ====== 設定 ======
   const SHOW_ANSWER_BOX = false; // 先生用に正解を右側に表示したい時だけ true
 
+　let mistakeCounts = {};
+  
   // 出題データ（説明 → 関数名）
   // ※説明は授業用に調整してOKです（短くするとテンポがよくなります）
   const ITEMS = [
@@ -175,6 +185,11 @@
   const statKey = "excel_func_desc_spell_stats_v1";
   let stats = { ok:0, ng:0, streak:0 };
 
+  // 間違い回数（localStorageに保存）
+　const mistakeKey = "excel_func_desc_mistakes_v1";
+　let mistakeCounts = {}; // 例: { MODE: 3, SUMIFS: 1 }
+
+
   const elQ = document.getElementById("question");
   const elTyped = document.getElementById("typed");
   const elLen = document.getElementById("lenBadge");
@@ -187,12 +202,25 @@
   const elList = document.getElementById("listBox");
   const elTeacherBox = document.getElementById("teacherBox");
   const elTeacherAns = document.getElementById("teacherAnswer");
+  const elMistakeBox = document.getElementById("mistakeBox");
+
 
   function saveStats(){ localStorage.setItem(statKey, JSON.stringify(stats)); }
   function loadStats(){
     const s = localStorage.getItem(statKey);
     if(s){ try{ stats = JSON.parse(s); }catch(e){} }
   }
+
+  function saveMistakes(){
+  localStorage.setItem(mistakeKey, JSON.stringify(mistakeCounts));
+}
+function loadMistakes(){
+  const s = localStorage.getItem(mistakeKey);
+  if(s){
+    try{ mistakeCounts = JSON.parse(s) || {}; }catch(e){ mistakeCounts = {}; }
+  }
+}
+
 
   function shuffle(arr){
     for(let i=arr.length-1;i>0;i--){
@@ -283,6 +311,12 @@
       stats.streak += 1;
       saveStats();
 
+      // 間違い回数をカウントして保存
+      const key = (current.func || "").toUpperCase();
+      mistakeCounts[key] = (mistakeCounts[key] || 0) + 1;
+      saveMistakes();
+
+      
       elFb.className = "log good";
       elFb.textContent = `✅ 正解！  ${b}`;
       setTimeout(setQuestion, 650);
@@ -357,6 +391,49 @@ document.getElementById("btnToggleRange").addEventListener("click", ()=>{
     rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
 });
 
+// 間違い一覧 表示/非表示
+let mistakesVisible = false;
+function renderMistakeBox(){
+  const entries = Object.entries(mistakeCounts)
+    .sort((a,b)=> b[1]-a[1]); // 多い順
+
+  if(entries.length === 0){
+    elMistakeBox.textContent = "まだ間違いはありません 👍";
+    return;
+  }
+  elMistakeBox.textContent = entries.map(([func,cnt]) => `${func}：${cnt}回`).join("\n");
+}
+
+document.getElementById("btnToggleMistakes").addEventListener("click", ()=>{
+  mistakesVisible = !mistakesVisible;
+  elMistakeBox.style.display = mistakesVisible ? "block" : "none";
+  document.getElementById("btnToggleMistakes").textContent =
+    mistakesVisible ? "間違い一覧を非表示" : "間違い一覧を表示";
+
+  if(mistakesVisible) renderMistakeBox();
+});
+
+// 間違い記録リセット
+document.getElementById("btnResetMistakes").addEventListener("click", ()=>{
+  if(confirm("間違い記録をリセットしますか？")){
+    mistakeCounts = {};
+    localStorage.removeItem(mistakeKey);
+    if(mistakesVisible) renderMistakeBox();
+    elFb.className = "log";
+    elFb.textContent = "間違い記録をリセットしました。";
+  }
+});
+
+  
+// 出題範囲 表示/非表示
+let rangeVisible = false;
+document.getElementById("btnToggleRange").addEventListener("click", ()=>{
+  rangeVisible = !rangeVisible;
+  elList.style.display = rangeVisible ? "block" : "none";
+  document.getElementById("btnToggleRange").textContent =
+    rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
+});
+
   
   // 物理キーボード対応
   window.addEventListener("keydown", (e)=>{
@@ -369,6 +446,7 @@ document.getElementById("btnToggleRange").addEventListener("click", ()=>{
 
   // 起動
   loadStats();
+  loadMistakes();
   buildKeyboard();
   refillPool();
   setQuestion();
