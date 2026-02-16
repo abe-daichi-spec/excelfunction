@@ -109,6 +109,7 @@
             <div class="n" id="streak">0</div>
           </div>
         </div>
+        
         <h1 style="margin-top:14px;">今回の出題範囲</h1>
         <div class="muted" style="margin-bottom:8px;">（ボタンで表示 / 非表示）</div>
 
@@ -131,19 +132,15 @@
           <div class="label">正解（先生用表示）</div>
           <div class="val" id="teacherAnswer">—</div>
         </div>
-     <!-- <div class="small">※「先生用表示」をONにしたい場合は、下のコードの <code>SHOW_ANSWER_BOX</code> を <code>true</code> にしてください。</div>
-      </div>　-->
+      </div>
     </div>
   </div>
 
 <script>
   // ====== 設定 ======
   const SHOW_ANSWER_BOX = false; // 先生用に正解を右側に表示したい時だけ true
-
-　let mistakeCounts = {};
   
-  // 出題データ（説明 → 関数名）
-  // ※説明は授業用に調整してOKです（短くするとテンポがよくなります）
+  // 出題データ
   const ITEMS = [
     { func:"DAVERAGE", desc:"データベースから、条件に合うレコードの「平均」を求める関数" },
     { func:"COLUMN", desc:"指定した参照の「列番号」を返す関数" },
@@ -152,7 +149,6 @@
     { func:"DCOUNT", desc:"データベースから、条件に合うレコードの「数値が入ったセル数」を数える関数" },
     { func:"SUMIFS", desc:"複数条件に合うセルの「合計」を求める関数" },
     { func:"FLOOR", desc:"指定した基準値の倍数に「切り下げ」る関数" },
-
     { func:"IFERROR", desc:"式がエラーなら、指定した値を返す（エラー処理）関数" },
     { func:"DSUM", desc:"データベースから、条件に合うレコードの「合計」を求める関数" },
     { func:"AVERAGEIFS", desc:"複数条件に合うセルの「平均」を求める関数" },
@@ -160,7 +156,6 @@
     { func:"DCOUNTA", desc:"データベースから、条件に合うレコードの「空白でないセル数」を数える関数" },
     { func:"MEDIAN", desc:"データの「中央値」を求める関数" },
     { func:"RANDBETWEEN", desc:"指定した範囲内の「乱数（整数）」を返す関数" },
-
     { func:"ROW", desc:"指定した参照の「行番号」を返す関数" },
     { func:"DMAX", desc:"データベースから、条件に合うレコードの「最大値」を求める関数" },
     { func:"COUNTIFS", desc:"複数条件に合うセルの「個数」を数える関数" },
@@ -169,7 +164,7 @@
     { func:"CEILING", desc:"指定した基準値の倍数に「切り上げ」る関数" }
   ];
 
-  // オンスクリーンキーボード配列（A-Z + 操作キー）
+  // オンスクリーンキーボード配列
   const KEY_ROWS = [
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
@@ -177,19 +172,19 @@
     ["⌫","ENTER","SPACE"]
   ];
 
-  let pool = [];          // 未出題プール（ITEMSのコピー）
-  let current = null;     // {func, desc}
-  let typed = "";
+  let pool = [];          // 未出題プール
+  let current = null;     // 現在の問題
+  let typed = "";         // 入力中の文字
 
-  // 成績（localStorageに保存）
+  // 成績
   const statKey = "excel_func_desc_spell_stats_v1";
   let stats = { ok:0, ng:0, streak:0 };
 
-  // 間違い回数（localStorageに保存）
-　const mistakeKey = "excel_func_desc_mistakes_v1";
-　let mistakeCounts = {}; // 例: { MODE: 3, SUMIFS: 1 }
+  // 間違い回数
+  const mistakeKey = "excel_func_desc_mistakes_v1";
+  let mistakeCounts = {}; 
 
-
+  // DOM要素
   const elQ = document.getElementById("question");
   const elTyped = document.getElementById("typed");
   const elLen = document.getElementById("lenBadge");
@@ -204,7 +199,7 @@
   const elTeacherAns = document.getElementById("teacherAnswer");
   const elMistakeBox = document.getElementById("mistakeBox");
 
-
+  // 保存・読込
   function saveStats(){ localStorage.setItem(statKey, JSON.stringify(stats)); }
   function loadStats(){
     const s = localStorage.getItem(statKey);
@@ -212,16 +207,16 @@
   }
 
   function saveMistakes(){
-  localStorage.setItem(mistakeKey, JSON.stringify(mistakeCounts));
-}
-function loadMistakes(){
-  const s = localStorage.getItem(mistakeKey);
-  if(s){
-    try{ mistakeCounts = JSON.parse(s) || {}; }catch(e){ mistakeCounts = {}; }
+    localStorage.setItem(mistakeKey, JSON.stringify(mistakeCounts));
   }
-}
+  function loadMistakes(){
+    const s = localStorage.getItem(mistakeKey);
+    if(s){
+      try{ mistakeCounts = JSON.parse(s) || {}; }catch(e){ mistakeCounts = {}; }
+    }
+  }
 
-
+  // シャッフル
   function shuffle(arr){
     for(let i=arr.length-1;i>0;i--){
       const j = Math.floor(Math.random()*(i+1));
@@ -259,10 +254,10 @@ function loadMistakes(){
     const total = stats.ok + stats.ng;
     elRate.textContent = total ? Math.round((stats.ok/total)*100) + "%" : "—";
 
-    // 出題範囲表示
+    // 出題範囲表示（リスト更新）
     elList.textContent = ITEMS.map(x => `${x.desc} → ${x.func}`).join("\n");
 
-    // 先生用正解表示
+    // 先生用
     if(SHOW_ANSWER_BOX){
       elTeacherBox.style.display = "block";
       elTeacherAns.textContent = current ? current.func : "—";
@@ -288,7 +283,6 @@ function loadMistakes(){
   }
 
   function hint(){
-    // 先頭2文字 + 文字数（丸暗記を避けつつ支援）
     const b = current.func.toUpperCase();
     const head = b.slice(0,2);
     elHint.textContent = `ヒント：${head}…（全${b.length}文字）`;
@@ -296,6 +290,7 @@ function loadMistakes(){
     elFb.textContent = "ヒントを表示しました。";
   }
 
+  // ★修正：判定ロジック
   function check(){
     const a = normalize(typed);
     const b = normalize(current.func);
@@ -307,25 +302,27 @@ function loadMistakes(){
     }
 
     if(a === b){
+      // 正解
       stats.ok += 1;
       stats.streak += 1;
       saveStats();
 
-      // 間違い回数をカウントして保存
-      const key = (current.func || "").toUpperCase();
-      mistakeCounts[key] = (mistakeCounts[key] || 0) + 1;
-      saveMistakes();
-
-      
       elFb.className = "log good";
       elFb.textContent = `✅ 正解！  ${b}`;
       setTimeout(setQuestion, 650);
     }else{
+      // 不正解
       stats.ng += 1;
       stats.streak = 0;
       saveStats();
 
-      // どこが違うかだけ示す（答え全表示はしない）
+      // ★修正：間違いカウントはここで増やす
+      const key = (current.func || "").toUpperCase();
+      mistakeCounts[key] = (mistakeCounts[key] || 0) + 1;
+      saveMistakes();
+      if(mistakesVisible) renderMistakeBox(); // 表示中なら更新
+
+      // 違いの指摘
       let diffAt = -1;
       const minLen = Math.min(a.length, b.length);
       for(let i=0;i<minLen;i++){
@@ -369,11 +366,12 @@ function loadMistakes(){
     });
   }
 
-  // ボタン
+  // イベントリスナー
   document.getElementById("btnCheck").addEventListener("click", check);
   document.getElementById("btnNext").addEventListener("click", setQuestion);
   document.getElementById("btnHint").addEventListener("click", hint);
   document.getElementById("btnClear").addEventListener("click", clearTyped);
+  
   document.getElementById("btnReset").addEventListener("click", ()=>{
     stats = { ok:0, ng:0, streak:0 };
     saveStats();
@@ -382,77 +380,34 @@ function loadMistakes(){
     render();
   });
 
-// 出題範囲 表示/非表示
-let rangeVisible = false;
-document.getElementById("btnToggleRange").addEventListener("click", ()=>{
-  rangeVisible = !rangeVisible;
-  elList.style.display = rangeVisible ? "block" : "none";
-  document.getElementById("btnToggleRange").textContent =
-    rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
-});
-
-// 間違い一覧 表示/非表示
-let mistakesVisible = false;
-function renderMistakeBox(){
-  const entries = Object.entries(mistakeCounts)
-    .sort((a,b)=> b[1]-a[1]); // 多い順
-
-  if(entries.length === 0){
-    elMistakeBox.textContent = "まだ間違いはありません 👍";
-    return;
-  }
-  elMistakeBox.textContent = entries.map(([func,cnt]) => `${func}：${cnt}回`).join("\n");
-}
-
-document.getElementById("btnToggleMistakes").addEventListener("click", ()=>{
-  mistakesVisible = !mistakesVisible;
-  elMistakeBox.style.display = mistakesVisible ? "block" : "none";
-  document.getElementById("btnToggleMistakes").textContent =
-    mistakesVisible ? "間違い一覧を非表示" : "間違い一覧を表示";
-
-  if(mistakesVisible) renderMistakeBox();
-});
-
-// 間違い記録リセット
-document.getElementById("btnResetMistakes").addEventListener("click", ()=>{
-  if(confirm("間違い記録をリセットしますか？")){
-    mistakeCounts = {};
-    localStorage.removeItem(mistakeKey);
-    if(mistakesVisible) renderMistakeBox();
-    elFb.className = "log";
-    elFb.textContent = "間違い記録をリセットしました。";
-  }
-});
-
-  
-// 出題範囲 表示/非表示
-let rangeVisible = false;
-document.getElementById("btnToggleRange").addEventListener("click", ()=>{
-  rangeVisible = !rangeVisible;
-  elList.style.display = rangeVisible ? "block" : "none";
-  document.getElementById("btnToggleRange").textContent =
-    rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
-});
-
-  
-  // 物理キーボード対応
-  window.addEventListener("keydown", (e)=>{
-    const k = e.key;
-    if(k === "Enter"){ e.preventDefault(); check(); return; }
-    if(k === "Backspace"){ e.preventDefault(); backspace(); return; }
-    if(k === " "){ e.preventDefault(); typeChar("SPACE"); return; }
-    if(/^[a-zA-Z]$/.test(k)){ typeChar(k.toUpperCase()); return; }
+  // 出題範囲 表示/非表示
+  let rangeVisible = false;
+  document.getElementById("btnToggleRange").addEventListener("click", ()=>{
+    rangeVisible = !rangeVisible;
+    elList.style.display = rangeVisible ? "block" : "none";
+    document.getElementById("btnToggleRange").textContent =
+      rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
   });
 
-  // 起動
-  loadStats();
-  loadMistakes();
-  buildKeyboard();
-  refillPool();
-  setQuestion();
-  render();
-</script>
-</body>
-</html>
+  // 間違い一覧 表示/非表示
+  let mistakesVisible = false;
+  function renderMistakeBox(){
+    const entries = Object.entries(mistakeCounts)
+      .sort((a,b)=> b[1]-a[1]); // 多い順
 
+    if(entries.length === 0){
+      elMistakeBox.textContent = "まだ間違いはありません 👍";
+      return;
+    }
+    elMistakeBox.textContent = entries.map(([func,cnt]) => `${func}：${cnt}回`).join("\n");
+  }
+
+  document.getElementById("btnToggleMistakes").addEventListener("click", ()=>{
+    mistakesVisible = !mistakesVisible;
+    elMistakeBox.style.display = mistakesVisible ? "block" : "none";
+    document.getElementById("btnToggleMistakes").textContent =
+      mistakesVisible ? "間違い一覧を非表示" : "間違い一覧を表示";
+
+    if(mistakesVisible) renderMistakeBox();
+  });
 
