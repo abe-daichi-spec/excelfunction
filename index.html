@@ -1,85 +1,317 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>簿記 商店経営RPG（MVP）</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Excel関数スペル練習</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#111a33; --text:#eef2ff; --muted:#a6b0d6;
+      --good:#22c55e; --bad:#ef4444; --warn:#f59e0b; --btn:#1b2a55; --btn2:#263a77;
+      --radius:16px;
+    }
+    body{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:920px; margin:0 auto; padding:18px; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:14px; }
+    @media(min-width:860px){ .grid{ grid-template-columns: 1.2fr .8fr; } }
+    .card{ background:var(--card); border-radius:var(--radius); padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1{ font-size:18px; margin:0 0 10px; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .q{ font-size:34px; letter-spacing:1px; font-weight:800; margin:12px 0 6px; }
+    .sub{ font-size:14px; color:var(--muted); }
+    .input{
+      margin-top:12px; padding:14px; border-radius:14px; background:#0c1430;
+      border:1px solid rgba(255,255,255,.08); font-size:24px; letter-spacing:1px;
+      min-height:34px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .input span{ opacity:.9; }
+    .badge{ font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      border:0; border-radius:12px; padding:12px 14px; background:var(--btn);
+      color:var(--text); font-size:14px; font-weight:700; cursor:pointer;
+      transition: transform .02s ease, background .2s ease;
+    }
+    button:active{ transform: translateY(1px); }
+    button:hover{ background:var(--btn2); }
+    .primary{ background:#3357ff; }
+    .primary:hover{ background:#2a49d6; }
+    .good{ background: rgba(34,197,94,.18); color: #b9ffd0; border:1px solid rgba(34,197,94,.35); }
+    .bad{ background: rgba(239,68,68,.18); color: #ffd0d0; border:1px solid rgba(239,68,68,.35); }
+    .warn{ background: rgba(245,158,11,.18); color: #ffe3b0; border:1px solid rgba(245,158,11,.35); }
+    .kbd{ display:grid; gap:8px; margin-top:12px; }
+    .kbdRow{ display:grid; grid-template-columns: repeat(10, 1fr); gap:8px; }
+    @media(max-width:520px){ .kbdRow{ grid-template-columns: repeat(7, 1fr); } }
+    .key{ padding:14px 0; text-align:center; background:#0c1430; border:1px solid rgba(255,255,255,.10); border-radius:12px; font-weight:800; }
+    .key:hover{ background:#12204a; }
+    .key.wide{ grid-column: span 2; }
+    .key.wider{ grid-column: span 3; }
+    .stats{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; }
+    .stat{ padding:12px; border-radius:14px; background:#0c1430; border:1px solid rgba(255,255,255,.08); }
+    .stat .n{ font-size:22px; font-weight:900; margin-top:4px; }
+    .log{ margin-top:10px; font-size:13px; color:var(--muted); line-height:1.6; }
+    .small{ font-size:12px; color:var(--muted); }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <h1>簿記 商店経営RPG</h1>
-    <div class="user">
-      <button id="loginBtn">Googleでログイン</button>
-      <span id="userName" class="muted"></span>
-    </div>
-  </header>
-
-  <main>
-    <section id="homeView" class="view">
+  <div class="wrap">
+    <div class="grid">
       <div class="card">
-        <h2>本日のクエスト</h2>
-        <p>10問のクイック学習に挑戦して、XPとコインを集めよう。</p>
-        <button id="startQuizBtn" class="primary">クエストを始める</button>
-      </div>
+        <h1>Excel関数 スペル練習（オンスクリーンキーボード）</h1>
+        <div class="muted">出題された関数名を、画面のキーで正しく入力 →「判定」</div>
 
-      <div class="grid">
-        <div class="card">
-          <h3>進捗</h3>
-          <p>今日のXP：<span id="todayXp">0</span></p>
-          <p>コンボ：<span id="combo">0</span></p>
-          <p>復習待ち：<span id="reviewCount">0</span></p>
-        </div>
-        <div class="card">
-          <h3>マイ店舗</h3>
-          <p>棚レベル：<span id="shelfLevel">1</span></p>
-          <p>週ポイント：<span id="weeklyPoints">0</span></p>
-        </div>
-      </div>
-    </section>
+        <div class="q" id="question">—</div>
+        <div class="sub" id="hintText">ヒント：なし</div>
 
-    <section id="quizView" class="view hidden">
-      <div class="card">
-        <div id="quizMeta">
-          <span id="qProgress">1 / 10</span>
-          <span id="qTag" class="tag"></span>
+        <div class="input">
+          <span id="typed"> </span>
+          <span class="badge" id="lenBadge">0</span>
         </div>
-        <h2 id="qText">問題文</h2>
-        <div id="choices" class="choices"></div>
-        <div id="feedback" class="feedback"></div>
+
         <div class="row">
-          <button id="nextBtn" class="primary" disabled>次へ</button>
-          <button id="quitBtn" class="ghost">やめる</button>
+          <button class="primary" id="btnCheck">判定（Enter）</button>
+          <button id="btnNext">次の問題</button>
+          <button class="warn" id="btnHint">ヒント</button>
+          <button class="bad" id="btnClear">クリア</button>
+          <button id="btnReset">成績リセット</button>
         </div>
+
+        <div class="kbd" id="kbd"></div>
+
+        <div class="log" id="feedback">ここに結果が表示されます。</div>
+        <div class="small">※PCは物理キーボードでも入力できます（A〜Z / Backspace / Enter）。</div>
       </div>
-    </section>
 
-    <section id="resultView" class="view hidden">
-      <div class="card center">
-        <h2>クエスト結果</h2>
-        <p>正答数：<span id="correctCount">0</span> / 10</p>
-        <p>獲得XP：<span id="earnedXp">0</span></p>
-        <p>週ポイント合計：<span id="finalWeeklyPoints">0</span></p>
-        <button id="backHomeBtn" class="primary">ホームへ戻る</button>
+      <div class="card">
+        <h1>成績</h1>
+        <div class="stats">
+          <div class="stat">
+            <div class="muted">正解</div>
+            <div class="n" id="ok">0</div>
+          </div>
+          <div class="stat">
+            <div class="muted">不正解</div>
+            <div class="n" id="ng">0</div>
+          </div>
+          <div class="stat">
+            <div class="muted">正答率</div>
+            <div class="n" id="rate">—</div>
+          </div>
+          <div class="stat">
+            <div class="muted">連続正解</div>
+            <div class="n" id="streak">0</div>
+          </div>
+        </div>
+
+        <h1 style="margin-top:14px;">出題リスト（今回）</h1>
+        <div class="muted" style="margin-bottom:8px;">画像に写っている関数（必要なら追加できます）</div>
+        <div class="log" id="listBox"></div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
-  <footer>
-    <small>© 2025 BokiRPG • <a href="README.html">README</a></small>
-  </footer>
+<script>
+  // 画像に写っている関数（必要に応じて追加・削除OK）
+  const FUNCTIONS = [
+    "DAVERAGE","COLUMN","ABS","MODE","DCOUNT","SUMIFS","FLOOR",
+    "IFERROR","DSUM","AVERAGEIFS","SUBSTITUTE","DCOUNTA","MEDIAN",
+    "RANDBETWEEN","ROW","DMAX","COUNTIFS","DMIN","FORECAST","CEILING"
+  ];
 
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="firebase.config.js"></script>
-  <script src="scripts.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
+  // オンスクリーンキーボード配列（A-Z + 操作キー）
+  const KEY_ROWS = [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["Z","X","C","V","B","N","M"],
+    ["⌫","SPACE","ENTER"]
+  ];
+
+  let pool = [];          // 未出題プール
+  let current = "";
+  let typed = "";
+
+  // 成績（localStorageに保存）
+  const statKey = "excel_func_spell_stats_v1";
+  let stats = { ok:0, ng:0, streak:0 };
+
+  const elQ = document.getElementById("question");
+  const elTyped = document.getElementById("typed");
+  const elLen = document.getElementById("lenBadge");
+  const elFb = document.getElementById("feedback");
+  const elHint = document.getElementById("hintText");
+  const elOk = document.getElementById("ok");
+  const elNg = document.getElementById("ng");
+  const elRate = document.getElementById("rate");
+  const elStreak = document.getElementById("streak");
+  const elList = document.getElementById("listBox");
+
+  function saveStats(){ localStorage.setItem(statKey, JSON.stringify(stats)); }
+  function loadStats(){
+    const s = localStorage.getItem(statKey);
+    if(s){ try{ stats = JSON.parse(s); }catch(e){} }
+  }
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
     }
-  </script>
+    return arr;
+  }
+
+  function refillPool(){
+    pool = shuffle([...FUNCTIONS]);
+  }
+
+  function setQuestion(){
+    if(pool.length === 0) refillPool();
+    current = pool.shift();
+    typed = "";
+    render();
+    elFb.className = "log";
+    elFb.textContent = "入力して「判定」してください。";
+    elHint.textContent = "ヒント：なし";
+  }
+
+  function normalize(s){
+    return (s || "").toUpperCase().replace(/\s+/g,"");
+  }
+
+  function render(){
+    elQ.textContent = current;
+    elTyped.textContent = typed.length ? typed : " ";
+    elLen.textContent = typed.length;
+    elOk.textContent = stats.ok;
+    elNg.textContent = stats.ng;
+    elStreak.textContent = stats.streak;
+
+    const total = stats.ok + stats.ng;
+    elRate.textContent = total ? Math.round((stats.ok/total)*100) + "%" : "—";
+
+    elList.textContent = FUNCTIONS.join(" / ");
+  }
+
+  function typeChar(ch){
+    if(ch === "SPACE") typed += " ";
+    else typed += ch;
+    render();
+  }
+
+  function backspace(){
+    typed = typed.slice(0,-1);
+    render();
+  }
+
+  function clearTyped(){
+    typed = "";
+    render();
+  }
+
+  function hint(){
+    // 先頭3文字 + 文字数を見せる（学年に合わせて調整可）
+    const head = current.slice(0,3);
+    elHint.textContent = `ヒント：${head}…（全${current.length}文字）`;
+    elFb.className = "log warn";
+    elFb.textContent = "ヒントを表示しました。";
+  }
+
+  function check(){
+    const a = normalize(typed);
+    const b = normalize(current);
+
+    if(!a){
+      elFb.className = "log warn";
+      elFb.textContent = "未入力です。";
+      return;
+    }
+
+    if(a === b){
+      stats.ok += 1;
+      stats.streak += 1;
+      saveStats();
+
+      elFb.className = "log good";
+      elFb.textContent = `✅ 正解！  ${current}`;
+      // すぐ次へ（テンポ重視）
+      setTimeout(setQuestion, 650);
+    }else{
+      stats.ng += 1;
+      stats.streak = 0;
+      saveStats();
+
+      // どこが違うかを軽く示す（答え丸写しにしない）
+      let diffAt = -1;
+      const minLen = Math.min(a.length, b.length);
+      for(let i=0;i<minLen;i++){
+        if(a[i] !== b[i]){ diffAt = i; break; }
+      }
+      if(diffAt === -1 && a.length !== b.length) diffAt = minLen;
+
+      elFb.className = "log bad";
+      elFb.textContent =
+        `❌ 不正解。違いは ${diffAt+1} 文字目あたり。もう一度！`;
+    }
+    render();
+  }
+
+  // キーボード生成
+  function buildKeyboard(){
+    const root = document.getElementById("kbd");
+    root.innerHTML = "";
+    KEY_ROWS.forEach(row=>{
+      const r = document.createElement("div");
+      r.className = "kbdRow";
+      row.forEach(k=>{
+        const btn = document.createElement("button");
+        btn.className = "key";
+        btn.type = "button";
+
+        if(k === "⌫"){ btn.textContent = "⌫"; btn.classList.add("wide"); }
+        else if(k === "SPACE"){ btn.textContent = "SPACE"; btn.classList.add("wider"); }
+        else if(k === "ENTER"){ btn.textContent = "ENTER"; btn.classList.add("wide"); }
+        else btn.textContent = k;
+
+        btn.addEventListener("click", ()=>{
+          if(k === "⌫") backspace();
+          else if(k === "ENTER") check();
+          else if(k === "SPACE") typeChar("SPACE");
+          else typeChar(k);
+        });
+
+        r.appendChild(btn);
+      });
+      root.appendChild(r);
+    });
+  }
+
+  // ボタン
+  document.getElementById("btnCheck").addEventListener("click", check);
+  document.getElementById("btnNext").addEventListener("click", setQuestion);
+  document.getElementById("btnHint").addEventListener("click", hint);
+  document.getElementById("btnClear").addEventListener("click", clearTyped);
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    stats = { ok:0, ng:0, streak:0 };
+    saveStats();
+    elFb.className = "log";
+    elFb.textContent = "成績をリセットしました。";
+    render();
+  });
+
+  // 物理キーボード対応
+  window.addEventListener("keydown", (e)=>{
+    const k = e.key;
+    if(k === "Enter"){ e.preventDefault(); check(); return; }
+    if(k === "Backspace"){ e.preventDefault(); backspace(); return; }
+    if(k === " "){ e.preventDefault(); typeChar("SPACE"); return; }
+    if(/^[a-zA-Z]$/.test(k)){ typeChar(k.toUpperCase()); return; }
+  });
+
+  // 起動
+  loadStats();
+  buildKeyboard();
+  refillPool();
+  setQuestion();
+  render();
+</script>
 </body>
 </html>
