@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Excel関数スペル練習</title>
+  <title>Excel関数（説明→スペル）練習</title>
   <style>
     :root{
       --bg:#0b1020; --card:#111a33; --text:#eef2ff; --muted:#a6b0d6;
@@ -17,14 +17,14 @@
     .card{ background:var(--card); border-radius:var(--radius); padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
     h1{ font-size:18px; margin:0 0 10px; }
     .muted{ color:var(--muted); font-size:13px; }
-    .q{ font-size:34px; letter-spacing:1px; font-weight:800; margin:12px 0 6px; }
+    .qTitle{ font-size:14px; color:var(--muted); margin-top:10px; }
+    .q{ font-size:26px; line-height:1.35; font-weight:800; margin:8px 0 6px; }
     .sub{ font-size:14px; color:var(--muted); }
     .input{
       margin-top:12px; padding:14px; border-radius:14px; background:#0c1430;
       border:1px solid rgba(255,255,255,.08); font-size:24px; letter-spacing:1px;
       min-height:34px; display:flex; align-items:center; justify-content:space-between;
     }
-    .input span{ opacity:.9; }
     .badge{ font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--muted); }
     .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
     button{
@@ -51,15 +51,22 @@
     .stat .n{ font-size:22px; font-weight:900; margin-top:4px; }
     .log{ margin-top:10px; font-size:13px; color:var(--muted); line-height:1.6; }
     .small{ font-size:12px; color:var(--muted); }
+    .answerBox{
+      margin-top:10px; padding:10px 12px; border-radius:14px; background:#0c1430;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .answerBox .label{ font-size:12px; color:var(--muted); }
+    .answerBox .val{ margin-top:4px; font-size:18px; font-weight:900; letter-spacing:1px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="grid">
       <div class="card">
-        <h1>Excel関数 スペル練習（オンスクリーンキーボード）</h1>
-        <div class="muted">出題された関数名を、画面のキーで正しく入力 →「判定」</div>
+        <h1>Excel関数 スペル練習（説明 → 関数名）</h1>
+        <div class="muted">出題された<strong>説明</strong>に対応する<strong>関数名（英字）</strong>を入力 →「判定」</div>
 
+        <div class="qTitle">問題（説明）</div>
         <div class="q" id="question">—</div>
         <div class="sub" id="hintText">ヒント：なし</div>
 
@@ -103,19 +110,48 @@
           </div>
         </div>
 
-        <h1 style="margin-top:14px;">出題リスト（今回）</h1>
-        <div class="muted" style="margin-bottom:8px;">画像に写っている関数（必要なら追加できます）</div>
+        <h1 style="margin-top:14px;">今回の出題範囲</h1>
+        <div class="muted" style="margin-bottom:8px;">（説明→関数名）</div>
         <div class="log" id="listBox"></div>
+
+        <div class="answerBox" id="teacherBox" style="display:none;">
+          <div class="label">正解（先生用表示）</div>
+          <div class="val" id="teacherAnswer">—</div>
+        </div>
+        <div class="small">※「先生用表示」をONにしたい場合は、下のコードの <code>SHOW_ANSWER_BOX</code> を <code>true</code> にしてください。</div>
       </div>
     </div>
   </div>
 
 <script>
-  // 画像に写っている関数（必要に応じて追加・削除OK）
-  const FUNCTIONS = [
-    "DAVERAGE","COLUMN","ABS","MODE","DCOUNT","SUMIFS","FLOOR",
-    "IFERROR","DSUM","AVERAGEIFS","SUBSTITUTE","DCOUNTA","MEDIAN",
-    "RANDBETWEEN","ROW","DMAX","COUNTIFS","DMIN","FORECAST","CEILING"
+  // ====== 設定 ======
+  const SHOW_ANSWER_BOX = false; // 先生用に正解を右側に表示したい時だけ true
+
+  // 出題データ（説明 → 関数名）
+  // ※説明は授業用に調整してOKです（短くするとテンポがよくなります）
+  const ITEMS = [
+    { func:"DAVERAGE", desc:"データベースから、条件に合うレコードの「平均」を求める関数" },
+    { func:"COLUMN", desc:"指定した参照の「列番号」を返す関数" },
+    { func:"ABS", desc:"数値の「絶対値」を返す関数（マイナスをプラスに）" },
+    { func:"MODE", desc:"範囲の中で「最も多く出現する値（最頻値）」を求める関数" },
+    { func:"DCOUNT", desc:"データベースから、条件に合うレコードの「数値が入ったセル数」を数える関数" },
+    { func:"SUMIFS", desc:"複数条件に合うセルの「合計」を求める関数" },
+    { func:"FLOOR", desc:"指定した基準値の倍数に「切り下げ」る関数" },
+
+    { func:"IFERROR", desc:"式がエラーなら、指定した値を返す（エラー処理）関数" },
+    { func:"DSUM", desc:"データベースから、条件に合うレコードの「合計」を求める関数" },
+    { func:"AVERAGEIFS", desc:"複数条件に合うセルの「平均」を求める関数" },
+    { func:"SUBSTITUTE", desc:"文字列の一部を、指定した文字に「置換」する関数" },
+    { func:"DCOUNTA", desc:"データベースから、条件に合うレコードの「空白でないセル数」を数える関数" },
+    { func:"MEDIAN", desc:"データの「中央値」を求める関数" },
+    { func:"RANDBETWEEN", desc:"指定した範囲内の「乱数（整数）」を返す関数" },
+
+    { func:"ROW", desc:"指定した参照の「行番号」を返す関数" },
+    { func:"DMAX", desc:"データベースから、条件に合うレコードの「最大値」を求める関数" },
+    { func:"COUNTIFS", desc:"複数条件に合うセルの「個数」を数える関数" },
+    { func:"DMIN", desc:"データベースから、条件に合うレコードの「最小値」を求める関数" },
+    { func:"FORECAST", desc:"既知のデータにもとづいて、将来の値を「予測」する関数" },
+    { func:"CEILING", desc:"指定した基準値の倍数に「切り上げ」る関数" }
   ];
 
   // オンスクリーンキーボード配列（A-Z + 操作キー）
@@ -123,15 +159,15 @@
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
     ["Z","X","C","V","B","N","M"],
-    ["⌫","SPACE","ENTER"]
+    ["⌫","ENTER","SPACE"]
   ];
 
-  let pool = [];          // 未出題プール
-  let current = "";
+  let pool = [];          // 未出題プール（ITEMSのコピー）
+  let current = null;     // {func, desc}
   let typed = "";
 
   // 成績（localStorageに保存）
-  const statKey = "excel_func_spell_stats_v1";
+  const statKey = "excel_func_desc_spell_stats_v1";
   let stats = { ok:0, ng:0, streak:0 };
 
   const elQ = document.getElementById("question");
@@ -144,6 +180,8 @@
   const elRate = document.getElementById("rate");
   const elStreak = document.getElementById("streak");
   const elList = document.getElementById("listBox");
+  const elTeacherBox = document.getElementById("teacherBox");
+  const elTeacherAns = document.getElementById("teacherAnswer");
 
   function saveStats(){ localStorage.setItem(statKey, JSON.stringify(stats)); }
   function loadStats(){
@@ -160,7 +198,7 @@
   }
 
   function refillPool(){
-    pool = shuffle([...FUNCTIONS]);
+    pool = shuffle(ITEMS.map(x=>({...x})));
   }
 
   function setQuestion(){
@@ -169,7 +207,7 @@
     typed = "";
     render();
     elFb.className = "log";
-    elFb.textContent = "入力して「判定」してください。";
+    elFb.textContent = "説明を読んで、関数名（英字）を入力して「判定」してください。";
     elHint.textContent = "ヒント：なし";
   }
 
@@ -178,7 +216,7 @@
   }
 
   function render(){
-    elQ.textContent = current;
+    elQ.textContent = current ? current.desc : "—";
     elTyped.textContent = typed.length ? typed : " ";
     elLen.textContent = typed.length;
     elOk.textContent = stats.ok;
@@ -188,7 +226,16 @@
     const total = stats.ok + stats.ng;
     elRate.textContent = total ? Math.round((stats.ok/total)*100) + "%" : "—";
 
-    elList.textContent = FUNCTIONS.join(" / ");
+    // 出題範囲表示
+    elList.textContent = ITEMS.map(x => `${x.desc} → ${x.func}`).join("\n");
+
+    // 先生用正解表示
+    if(SHOW_ANSWER_BOX){
+      elTeacherBox.style.display = "block";
+      elTeacherAns.textContent = current ? current.func : "—";
+    }else{
+      elTeacherBox.style.display = "none";
+    }
   }
 
   function typeChar(ch){
@@ -208,16 +255,17 @@
   }
 
   function hint(){
-    // 先頭3文字 + 文字数を見せる（学年に合わせて調整可）
-    const head = current.slice(0,3);
-    elHint.textContent = `ヒント：${head}…（全${current.length}文字）`;
+    // 先頭2文字 + 文字数（丸暗記を避けつつ支援）
+    const b = current.func.toUpperCase();
+    const head = b.slice(0,2);
+    elHint.textContent = `ヒント：${head}…（全${b.length}文字）`;
     elFb.className = "log warn";
     elFb.textContent = "ヒントを表示しました。";
   }
 
   function check(){
     const a = normalize(typed);
-    const b = normalize(current);
+    const b = normalize(current.func);
 
     if(!a){
       elFb.className = "log warn";
@@ -231,15 +279,14 @@
       saveStats();
 
       elFb.className = "log good";
-      elFb.textContent = `✅ 正解！  ${current}`;
-      // すぐ次へ（テンポ重視）
+      elFb.textContent = `✅ 正解！  ${b}`;
       setTimeout(setQuestion, 650);
     }else{
       stats.ng += 1;
       stats.streak = 0;
       saveStats();
 
-      // どこが違うかを軽く示す（答え丸写しにしない）
+      // どこが違うかだけ示す（答え全表示はしない）
       let diffAt = -1;
       const minLen = Math.min(a.length, b.length);
       for(let i=0;i<minLen;i++){
@@ -248,8 +295,7 @@
       if(diffAt === -1 && a.length !== b.length) diffAt = minLen;
 
       elFb.className = "log bad";
-      elFb.textContent =
-        `❌ 不正解。違いは ${diffAt+1} 文字目あたり。もう一度！`;
+      elFb.textContent = `❌ 不正解。違いは ${diffAt+1} 文字目あたり。もう一度！`;
     }
     render();
   }
