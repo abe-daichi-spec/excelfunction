@@ -1,127 +1,380 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Excel関数スペル練習</title>
-<style>
-:root{
-  --bg:#0b1020; --card:#111a33; --text:#eef2ff; --muted:#a6b0d6;
-  --btn:#1b2a55; --btn2:#263a77; --radius:16px;
-}
-body{margin:0;font-family:sans-serif;background:var(--bg);color:var(--text);}
-.wrap{max-width:920px;margin:auto;padding:18px;}
-.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
-.q{font-size:24px;font-weight:bold;margin:8px 0;}
-.input{background:#0c1430;padding:12px;border-radius:12px;margin-top:10px;}
-button{margin:4px;padding:10px 14px;border-radius:10px;border:0;background:var(--btn);color:white;font-weight:bold;}
-button:hover{background:var(--btn2);}
-.log{margin-top:10px;color:#ccc;white-space:pre-wrap;}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Excel関数（説明→スペル）練習</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#111a33; --text:#eef2ff; --muted:#a6b0d6;
+      --good:#22c55e; --bad:#ef4444; --warn:#f59e0b; --btn:#1b2a55; --btn2:#263a77;
+      --radius:16px;
+    }
+    body{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:920px; margin:0 auto; padding:18px; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:14px; }
+    @media(min-width:860px){ .grid{ grid-template-columns: 1.2fr .8fr; } }
+    .card{ background:var(--card); border-radius:var(--radius); padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1{ font-size:18px; margin:0 0 10px; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .qTitle{ font-size:14px; color:var(--muted); margin-top:10px; }
+    .q{ font-size:26px; line-height:1.35; font-weight:800; margin:8px 0 6px; }
+    .sub{ font-size:14px; color:var(--muted); }
+    .input{
+      margin-top:12px; padding:14px; border-radius:14px; background:#0c1430;
+      border:1px solid rgba(255,255,255,.08); font-size:24px; letter-spacing:1px;
+      min-height:34px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .badge{ font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      border:0; border-radius:12px; padding:12px 14px; background:var(--btn);
+      color:var(--text); font-size:14px; font-weight:700; cursor:pointer;
+      transition: transform .02s ease, background .2s ease;
+    }
+    button:active{ transform: translateY(1px); }
+    button:hover{ background:var(--btn2); }
+    .primary{ background:#3357ff; }
+    .primary:hover{ background:#2a49d6; }
+    .good{ background: rgba(34,197,94,.18); color: #b9ffd0; border:1px solid rgba(34,197,94,.35); }
+    .bad{ background: rgba(239,68,68,.18); color: #ffd0d0; border:1px solid rgba(239,68,68,.35); }
+    .warn{ background: rgba(245,158,11,.18); color: #ffe3b0; border:1px solid rgba(245,158,11,.35); }
+    .kbd{ display:grid; gap:8px; margin-top:12px; }
+    .kbdRow{ display:grid; grid-template-columns: repeat(10, 1fr); gap:8px; }
+    @media(max-width:520px){ .kbdRow{ grid-template-columns: repeat(7, 1fr); } }
+    .key{ padding:14px 0; text-align:center; background:#0c1430; border:1px solid rgba(255,255,255,.10); border-radius:12px; font-weight:800; }
+    .key:hover{ background:#12204a; }
+    .key.wide{ grid-column: span 2; }
+    .key.wider{ grid-column: span 3; }
+    .stats{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; }
+    .stat{ padding:12px; border-radius:14px; background:#0c1430; border:1px solid rgba(255,255,255,.08); }
+    .stat .n{ font-size:22px; font-weight:900; margin-top:4px; }
+    .log{ margin-top:10px; font-size:13px; color:var(--muted); line-height:1.6; }
+    .small{ font-size:12px; color:var(--muted); }
+    .answerBox{
+      margin-top:10px; padding:10px 12px; border-radius:14px; background:#0c1430;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .answerBox .label{ font-size:12px; color:var(--muted); }
+    .answerBox .val{ margin-top:4px; font-size:18px; font-weight:900; letter-spacing:1px; }
+  </style>
 </head>
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="grid">
+      <div class="card">
+        <h1>Excel関数 スペル練習（説明 → 関数名）</h1>
+        <div class="muted">出題された<strong>説明</strong>に対応する<strong>関数名（英字）</strong>を入力 →「判定」</div>
 
-<div class="card">
-<h2>問題（説明 → 関数名）</h2>
-<div class="q" id="question">—</div>
-<div class="input" id="typed"></div>
+        <div class="qTitle">問題（説明）</div>
+        <div class="q" id="question">—</div>
+        <div class="sub" id="hintText">ヒント：なし</div>
 
-<button onclick="check()">判定</button>
-<button onclick="nextQ()">次の問題</button>
-<button onclick="clearTyped()">クリア</button>
-<button onclick="hint()">ヒント</button>
+        <div class="input">
+          <span id="typed"> </span>
+          <span class="badge" id="lenBadge">0</span>
+        </div>
 
-<div class="log" id="feedback"></div>
-</div>
+        <div class="row">
+          <button class="primary" id="btnCheck">判定（Enter）</button>
+          <button id="btnNext">次の問題</button>
+          <button class="warn" id="btnHint">ヒント</button>
+          <button class="bad" id="btnClear">クリア</button>
+          <button id="btnReset">成績リセット</button>
+        </div>
 
-<div class="card">
-<h2>出題範囲</h2>
-<button id="btnToggleRange">出題範囲を表示</button>
-<div class="log" id="listBox" style="display:none;"></div>
-</div>
+        <div class="kbd" id="kbd"></div>
 
-</div>
+        <div class="log" id="feedback">ここに結果が表示されます。</div>
+        <div class="small">※PCは物理キーボードでも入力できます（A〜Z / Backspace / Enter）。</div>
+      </div>
+
+      <div class="card">
+        <h1>成績</h1>
+        <div class="stats">
+          <div class="stat">
+            <div class="muted">正解</div>
+            <div class="n" id="ok">0</div>
+          </div>
+          <div class="stat">
+            <div class="muted">不正解</div>
+            <div class="n" id="ng">0</div>
+          </div>
+          <div class="stat">
+            <div class="muted">正答率</div>
+            <div class="n" id="rate">—</div>
+          </div>
+          <div class="stat">
+            <div class="muted">連続正解</div>
+            <div class="n" id="streak">0</div>
+          </div>
+        </div>
+
+        <h1 style="margin-top:14px;">今回の出題範囲</h1>
+　       <div class="muted" style="margin-bottom:8px;">（ボタンを押すと表示 / 非表示）</div>
+
+          <div class="row" style="margin-top:0;">
+          <button id="btnToggleRange">出題範囲を表示</button>
+          </div>
+
+          <div class="log" id="listBox" style="display:none; white-space:pre-wrap;"></div>
+
+        <div class="answerBox" id="teacherBox" style="display:none;">
+          <div class="label">正解（先生用表示）</div>
+          <div class="val" id="teacherAnswer">—</div>
+        </div>
+        <div class="small">※「先生用表示」をONにしたい場合は、下のコードの <code>SHOW_ANSWER_BOX</code> を <code>true</code> にしてください。</div>
+      </div>
+    </div>
+  </div>
 
 <script>
-// ===== 先生用設定 =====
-const SHOW_ANSWER_BOX = false; // ← true にすると関数名も表示
+  // ====== 設定 ======
+  const SHOW_ANSWER_BOX = false; // 先生用に正解を右側に表示したい時だけ true
 
-// ===== 出題データ =====
-const ITEMS = [
-{func:"MODE",desc:"最も多く出現する値（最頻値）を求める関数"},
-{func:"ABS",desc:"数値の絶対値を求める関数"},
-{func:"SUMIFS",desc:"複数条件に合うセルの合計を求める関数"},
-{func:"AVERAGEIFS",desc:"複数条件に合うセルの平均を求める関数"},
-{func:"COUNTIFS",desc:"複数条件に合うセルの個数を数える関数"},
-{func:"MEDIAN",desc:"中央値を求める関数"},
-{func:"IFERROR",desc:"エラー時に指定した値を返す関数"},
-{func:"SUBSTITUTE",desc:"文字列の一部を置換する関数"},
-{func:"RANDBETWEEN",desc:"指定範囲の乱数を返す関数"},
-{func:"FORECAST",desc:"既存データから将来の値を予測する関数"}
-];
+  // 出題データ（説明 → 関数名）
+  // ※説明は授業用に調整してOKです（短くするとテンポがよくなります）
+  const ITEMS = [
+    { func:"DAVERAGE", desc:"データベースから、条件に合うレコードの「平均」を求める関数" },
+    { func:"COLUMN", desc:"指定した参照の「列番号」を返す関数" },
+    { func:"ABS", desc:"数値の「絶対値」を返す関数（マイナスをプラスに）" },
+    { func:"MODE", desc:"範囲の中で「最も多く出現する値（最頻値）」を求める関数" },
+    { func:"DCOUNT", desc:"データベースから、条件に合うレコードの「数値が入ったセル数」を数える関数" },
+    { func:"SUMIFS", desc:"複数条件に合うセルの「合計」を求める関数" },
+    { func:"FLOOR", desc:"指定した基準値の倍数に「切り下げ」る関数" },
 
-let pool = [];
-let current = null;
-let typed = "";
-let rangeVisible = false;
+    { func:"IFERROR", desc:"式がエラーなら、指定した値を返す（エラー処理）関数" },
+    { func:"DSUM", desc:"データベースから、条件に合うレコードの「合計」を求める関数" },
+    { func:"AVERAGEIFS", desc:"複数条件に合うセルの「平均」を求める関数" },
+    { func:"SUBSTITUTE", desc:"文字列の一部を、指定した文字に「置換」する関数" },
+    { func:"DCOUNTA", desc:"データベースから、条件に合うレコードの「空白でないセル数」を数える関数" },
+    { func:"MEDIAN", desc:"データの「中央値」を求める関数" },
+    { func:"RANDBETWEEN", desc:"指定した範囲内の「乱数（整数）」を返す関数" },
 
-// ===== 初期化 =====
-function shuffle(arr){return arr.sort(()=>Math.random()-0.5);}
-function refill(){ pool = shuffle([...ITEMS]); }
-function nextQ(){
-  if(pool.length===0) refill();
-  current = pool.pop();
-  typed="";
-  render();
-}
+    { func:"ROW", desc:"指定した参照の「行番号」を返す関数" },
+    { func:"DMAX", desc:"データベースから、条件に合うレコードの「最大値」を求める関数" },
+    { func:"COUNTIFS", desc:"複数条件に合うセルの「個数」を数える関数" },
+    { func:"DMIN", desc:"データベースから、条件に合うレコードの「最小値」を求める関数" },
+    { func:"FORECAST", desc:"既知のデータにもとづいて、将来の値を「予測」する関数" },
+    { func:"CEILING", desc:"指定した基準値の倍数に「切り上げ」る関数" }
+  ];
 
-function render(){
-  document.getElementById("question").textContent = current.desc;
-  document.getElementById("typed").textContent = typed;
-  document.getElementById("feedback").textContent = "";
+  // オンスクリーンキーボード配列（A-Z + 操作キー）
+  const KEY_ROWS = [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["Z","X","C","V","B","N","M"],
+    ["⌫","ENTER","SPACE"]
+  ];
 
-  // 出題範囲表示（B案）
-  document.getElementById("listBox").textContent =
-    ITEMS.map(x => `・${x.desc}${SHOW_ANSWER_BOX ? " → " + x.func : ""}`).join("\n");
-}
+  let pool = [];          // 未出題プール（ITEMSのコピー）
+  let current = null;     // {func, desc}
+  let typed = "";
 
-function typeChar(c){ typed += c; render(); }
-function clearTyped(){ typed=""; render(); }
+  // 成績（localStorageに保存）
+  const statKey = "excel_func_desc_spell_stats_v1";
+  let stats = { ok:0, ng:0, streak:0 };
 
-function hint(){
-  document.getElementById("feedback").textContent =
-    "ヒント：" + current.func.slice(0,2) + "…";
-}
+  const elQ = document.getElementById("question");
+  const elTyped = document.getElementById("typed");
+  const elLen = document.getElementById("lenBadge");
+  const elFb = document.getElementById("feedback");
+  const elHint = document.getElementById("hintText");
+  const elOk = document.getElementById("ok");
+  const elNg = document.getElementById("ng");
+  const elRate = document.getElementById("rate");
+  const elStreak = document.getElementById("streak");
+  const elList = document.getElementById("listBox");
+  const elTeacherBox = document.getElementById("teacherBox");
+  const elTeacherAns = document.getElementById("teacherAnswer");
 
-function check(){
-  if(typed.toUpperCase()===current.func){
-    document.getElementById("feedback").textContent = "✅ 正解！";
-    setTimeout(nextQ,600);
-  }else{
-    document.getElementById("feedback").textContent = "❌ 不正解";
+  function saveStats(){ localStorage.setItem(statKey, JSON.stringify(stats)); }
+  function loadStats(){
+    const s = localStorage.getItem(statKey);
+    if(s){ try{ stats = JSON.parse(s); }catch(e){} }
   }
-}
 
-// ===== 出題範囲 表示ボタン =====
-document.getElementById("btnToggleRange").addEventListener("click",()=>{
-  rangeVisible=!rangeVisible;
-  document.getElementById("listBox").style.display = rangeVisible?"block":"none";
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function refillPool(){
+    pool = shuffle(ITEMS.map(x=>({...x})));
+  }
+
+  function setQuestion(){
+    if(pool.length === 0) refillPool();
+    current = pool.shift();
+    typed = "";
+    render();
+    elFb.className = "log";
+    elFb.textContent = "説明を読んで、関数名（英字）を入力して「判定」してください。";
+    elHint.textContent = "ヒント：なし";
+  }
+
+  function normalize(s){
+    return (s || "").toUpperCase().replace(/\s+/g,"");
+  }
+
+  function render(){
+    elQ.textContent = current ? current.desc : "—";
+    elTyped.textContent = typed.length ? typed : " ";
+    elLen.textContent = typed.length;
+    elOk.textContent = stats.ok;
+    elNg.textContent = stats.ng;
+    elStreak.textContent = stats.streak;
+
+    const total = stats.ok + stats.ng;
+    elRate.textContent = total ? Math.round((stats.ok/total)*100) + "%" : "—";
+
+    // 出題範囲表示
+    elList.textContent = ITEMS.map(x => `${x.desc} → ${x.func}`).join("\n");
+
+    // 先生用正解表示
+    if(SHOW_ANSWER_BOX){
+      elTeacherBox.style.display = "block";
+      elTeacherAns.textContent = current ? current.func : "—";
+    }else{
+      elTeacherBox.style.display = "none";
+    }
+  }
+
+  function typeChar(ch){
+    if(ch === "SPACE") typed += " ";
+    else typed += ch;
+    render();
+  }
+
+  function backspace(){
+    typed = typed.slice(0,-1);
+    render();
+  }
+
+  function clearTyped(){
+    typed = "";
+    render();
+  }
+
+  function hint(){
+    // 先頭2文字 + 文字数（丸暗記を避けつつ支援）
+    const b = current.func.toUpperCase();
+    const head = b.slice(0,2);
+    elHint.textContent = `ヒント：${head}…（全${b.length}文字）`;
+    elFb.className = "log warn";
+    elFb.textContent = "ヒントを表示しました。";
+  }
+
+  function check(){
+    const a = normalize(typed);
+    const b = normalize(current.func);
+
+    if(!a){
+      elFb.className = "log warn";
+      elFb.textContent = "未入力です。";
+      return;
+    }
+
+    if(a === b){
+      stats.ok += 1;
+      stats.streak += 1;
+      saveStats();
+
+      elFb.className = "log good";
+      elFb.textContent = `✅ 正解！  ${b}`;
+      setTimeout(setQuestion, 650);
+    }else{
+      stats.ng += 1;
+      stats.streak = 0;
+      saveStats();
+
+      // どこが違うかだけ示す（答え全表示はしない）
+      let diffAt = -1;
+      const minLen = Math.min(a.length, b.length);
+      for(let i=0;i<minLen;i++){
+        if(a[i] !== b[i]){ diffAt = i; break; }
+      }
+      if(diffAt === -1 && a.length !== b.length) diffAt = minLen;
+
+      elFb.className = "log bad";
+      elFb.textContent = `❌ 不正解。違いは ${diffAt+1} 文字目あたり。もう一度！`;
+    }
+    render();
+  }
+
+  // キーボード生成
+  function buildKeyboard(){
+    const root = document.getElementById("kbd");
+    root.innerHTML = "";
+    KEY_ROWS.forEach(row=>{
+      const r = document.createElement("div");
+      r.className = "kbdRow";
+      row.forEach(k=>{
+        const btn = document.createElement("button");
+        btn.className = "key";
+        btn.type = "button";
+
+        if(k === "⌫"){ btn.textContent = "⌫"; btn.classList.add("wide"); }
+        else if(k === "SPACE"){ btn.textContent = "SPACE"; btn.classList.add("wider"); }
+        else if(k === "ENTER"){ btn.textContent = "ENTER"; btn.classList.add("wide"); }
+        else btn.textContent = k;
+
+        btn.addEventListener("click", ()=>{
+          if(k === "⌫") backspace();
+          else if(k === "ENTER") check();
+          else if(k === "SPACE") typeChar("SPACE");
+          else typeChar(k);
+        });
+
+        r.appendChild(btn);
+      });
+      root.appendChild(r);
+    });
+  }
+
+  // ボタン
+  document.getElementById("btnCheck").addEventListener("click", check);
+  document.getElementById("btnNext").addEventListener("click", setQuestion);
+  document.getElementById("btnHint").addEventListener("click", hint);
+  document.getElementById("btnClear").addEventListener("click", clearTyped);
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    stats = { ok:0, ng:0, streak:0 };
+    saveStats();
+    elFb.className = "log";
+    elFb.textContent = "成績をリセットしました。";
+    render();
+  });
+
+// 出題範囲 表示/非表示
+let rangeVisible = false;
+document.getElementById("btnToggleRange").addEventListener("click", ()=>{
+  rangeVisible = !rangeVisible;
+  elList.style.display = rangeVisible ? "block" : "none";
   document.getElementById("btnToggleRange").textContent =
-    rangeVisible?"出題範囲を非表示":"出題範囲を表示";
+    rangeVisible ? "出題範囲を非表示" : "出題範囲を表示";
 });
 
-// ===== キーボード入力対応 =====
-window.addEventListener("keydown",e=>{
-  if(e.key==="Enter") check();
-  else if(e.key==="Backspace"){ typed=typed.slice(0,-1); render(); }
-  else if(/^[a-zA-Z]$/.test(e.key)){ typeChar(e.key.toUpperCase()); }
-});
+  
+  // 物理キーボード対応
+  window.addEventListener("keydown", (e)=>{
+    const k = e.key;
+    if(k === "Enter"){ e.preventDefault(); check(); return; }
+    if(k === "Backspace"){ e.preventDefault(); backspace(); return; }
+    if(k === " "){ e.preventDefault(); typeChar("SPACE"); return; }
+    if(/^[a-zA-Z]$/.test(k)){ typeChar(k.toUpperCase()); return; }
+  });
 
-// 起動
-refill();
-nextQ();
+  // 起動
+  loadStats();
+  buildKeyboard();
+  refillPool();
+  setQuestion();
+  render();
 </script>
 </body>
 </html>
+
 
