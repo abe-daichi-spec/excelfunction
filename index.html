@@ -411,3 +411,34 @@
     if(mistakesVisible) renderMistakeBox();
   });
 
+  // 間違い記録リセット
+  document.getElementById("btnResetMistakes").addEventListener("click", ()=>{
+    if(confirm("間違い記録をリセットしますか？")){
+      mistakeCounts = {};
+      localStorage.removeItem(mistakeKey);
+      if(mistakesVisible) renderMistakeBox();
+      elFb.className = "log";
+      elFb.textContent = "間違い記録をリセットしました。";
+    }
+  });
+
+  // 物理キーボード対応
+  window.addEventListener("keydown", (e)=>{
+    const k = e.key;
+    if(k === "Enter"){ e.preventDefault(); check(); return; }
+    if(k === "Backspace"){ e.preventDefault(); backspace(); return; }
+    if(k === " "){ e.preventDefault(); typeChar("SPACE"); return; }
+    if(/^[a-zA-Z]$/.test(k)){ typeChar(k.toUpperCase()); return; }
+  });
+
+  // 初期化・起動
+  loadStats();
+  loadMistakes();
+  buildKeyboard();
+  refillPool();
+  setQuestion();
+  render();
+
+</script>
+</body>
+</html>
